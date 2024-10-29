@@ -1,37 +1,34 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+// app/(tabs)/_layout.tsx
+import React from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+const TabsLayout = () => {
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+      screenOptions={({ route }) => ({
         headerShown: false,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
-          ),
-        }}
-      />
+        tabBarIcon: ({ color, size }) => {
+          let iconName: "home" | "search" | "ellipse";
+
+          if (route.name === "index") {
+            iconName = "home";
+          } else if (route.name === "search") {
+            iconName = "search";
+          } else {
+            iconName = "ellipse";
+          }
+
+          return <Ionicons name={iconName} size={size + 4} color={color} />;
+        },
+        tabBarActiveTintColor: "#4CAF50",
+        tabBarInactiveTintColor: "gray",
+      })}
+    >
+      <Tabs.Screen name="index" options={{ title: "Rekomendasi" }} />
+      <Tabs.Screen name="search" options={{ title: "Pencarian" }} />
     </Tabs>
   );
-}
+};
+
+export default TabsLayout;
