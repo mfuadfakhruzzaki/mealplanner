@@ -1,50 +1,47 @@
-# Welcome to your Expo app 👋
+# Meal Planner
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Meal Planner** adalah aplikasi yang membantu pengguna merencanakan menu makanan berdasarkan kebutuhan kalori, jenis diet, bahan yang ingin dikecualikan, serta periode waktu. Aplikasi ini juga memungkinkan pencarian informasi nutrisi dari berbagai bahan makanan.
 
-## Get started
+## Deskripsi Aplikasi
 
-1. Install dependencies
+Meal Planner menyediakan fitur untuk:
+- Menentukan periode waktu (time period) untuk perencanaan makanan, yang dapat diatur sebagai `day` atau `week`.
+- Menentukan tipe diet, seperti:
+  - Gluten Free
+  - Ketogenic
+  - Vegetarian
+  - Vegan
+  - Paleo
+  - Primal
+  - Whole30
+- Mengecualikan bahan tertentu dalam bahasa Inggris, dipisahkan dengan koma. Contoh: `sugar, salt, peanuts`
+- Menentukan target kalori harian.
+- Mencari kandungan nutrisi dari bahan makanan tertentu di halaman pencarian (search), untuk melihat informasi seperti kalori, lemak, protein, dan karbohidrat.
 
-   ```bash
-   npm install
-   ```
+## Informasi Pengembang
 
-2. Start the app
+- Nama: **Muhammad Fuad Fakhruzzaki**
+- NIM: **21120122130052**
+- Kelompok/Shift: **10/2**
 
-   ```bash
-    npx expo start
-   ```
+## Informasi APK
 
-In the output, you'll find options to open the app in a
+File APK dari aplikasi Meal Planner ini sudah disertakan di dalam repository. Anda dapat mengunduh dan menginstalnya pada perangkat Android.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Petunjuk Penggunaan
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+1. **Input Time Period**: Isi dengan `day` atau `week` untuk mengatur periode waktu.
+2. **Input Diet Type**: Pilih salah satu dari:
+   - Gluten Free
+   - Ketogenic
+   - Vegetarian
+   - Vegan
+   - Paleo
+   - Primal
+   - Whole30
+3. **Excluded Ingredients**: Isi dengan bahan-bahan yang ingin dikecualikan, dipisahkan dengan koma (misalnya: `sugar, salt, peanuts`).
+4. **Target Kalori Harian**: Tentukan jumlah kalori harian yang diinginkan.
 
-## Get a fresh project
+Di halaman **Search**, Anda dapat mencari informasi kandungan nutrisi dari bahan makanan tertentu.
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Semoga aplikasi Meal Planner ini bermanfaat dalam membantu perencanaan makanan sehat dan sesuai kebutuhan!
