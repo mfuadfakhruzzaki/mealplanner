@@ -17,45 +17,46 @@ const TabsLayout = () => {
             iconName = "search";
           }
 
-          // Wrapping the icon in a View to center-align it better
           return (
             <View style={styles.iconContainer}>
-              <Ionicons
-                name={iconName}
-                size={focused ? size + 6 : size + 4} // Increase size slightly when active
-                color={color}
-              />
+              <Ionicons name={iconName} size={size} color={color} />
             </View>
           );
         },
-        tabBarActiveTintColor: "white",
-        tabBarInactiveTintColor: "white",
+        tabBarActiveTintColor: "#FFFFFF",
+        tabBarInactiveTintColor: "#FFFFFF",
         tabBarStyle: styles.tabBarStyle,
         tabBarShowLabel: false,
       })}
     >
-      <Tabs.Screen name="index" options={{ title: "Rekomendasi" }} />
-      <Tabs.Screen name="search" options={{ title: "Pencarian" }} />
+      <Tabs.Screen name="index" options={{ title: "Generate Meal Plan" }} />
+      <Tabs.Screen name="search" options={{ title: "Search Ingredient" }} />
     </Tabs>
   );
 };
 
 const styles = StyleSheet.create({
   tabBarStyle: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 30, // Adjusted for a more oval shape
-    marginHorizontal: 20,
-    marginBottom: 20,
-    height: 70, // Increased height to center icons vertically
-    paddingBottom: 10, // Add padding to push icons down
-    paddingTop: 8, // Add padding to improve vertical alignment
-    alignItems: "center",
+    backgroundColor: "#DA8359",
+    borderRadius: 24,
+    position: "absolute",
+    bottom: 15,
+    left: 10,
+    right: 10,
+    height: 65,
+    paddingBottom: 10,
+    paddingTop: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
   },
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: 50, // Adjust width to create balanced space for icons
-    height: 50, // Center icon vertically within the container
+    width: 60,
+    height: 60,
   },
 });
 

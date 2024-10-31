@@ -1,169 +1,292 @@
-// app/(tabs)/search.tsx
 import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   FlatList,
+  Image,
   ActivityIndicator,
   Alert,
+  StatusBar,
+  ScrollView,
 } from "react-native";
-import MealCard from "../../components/MealCard";
-import NutritionInfo from "../../components/NutritionInfo";
-import { API_KEY, BASE_URL } from "../../constants";
 import axios from "axios";
+import { API_KEY, BASE_URL } from "../../constants";
 
-interface MealDetail {
+interface Ingredient {
   id: number;
-  title: string;
+  name: string;
   image: string;
-  nutrition: {
-    nutrients: Array<{
-      title: string;
-      amount: number;
-      unit: string;
-    }>;
-  };
 }
 
-const Search = () => {
+interface NutritionInfo {
+  calories: number;
+  fat: number;
+  carbohydrates: number;
+  protein: number;
+}
+
+const SearchScreen = () => {
   const [query, setQuery] = useState<string>("");
-  const [meal, setMeal] = useState<MealDetail | null>(null);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [nutritionData, setNutritionData] = useState<{
+    [key: number]: NutritionInfo;
+  }>({});
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSearch = async () => {
     if (!query.trim()) {
-      Alert.alert(
-        "Input Kosong",
-        "Silakan masukkan nama makanan untuk dicari."
-      );
+      Alert.alert("Empty input", "Please enter an ingredient to search.");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/food/products/search`, {
+      const response = await axios.get(`${BASE_URL}/food/ingredients/search`, {
         params: {
           query,
+          number: 10,
           apiKey: API_KEY,
         },
       });
 
       if (response.data.results.length === 0) {
-        Alert.alert(
-          "Tidak Ditemukan",
-          "Tidak ada makanan yang sesuai dengan pencarian Anda."
-        );
-        setMeal(null);
+        Alert.alert("Not found", "No ingredient match your search.");
+        setIngredients([]);
       } else {
-        const selectedMeal = response.data.results[0];
-        // Ambil detail nutrisi
-        const detailResponse = await axios.get(
-          `${BASE_URL}/food/products/${selectedMeal.id}`,
-          {
-            params: {
-              apiKey: API_KEY,
-            },
-          }
-        );
-        setMeal(detailResponse.data);
+        setIngredients(response.data.results);
+        response.data.results.forEach((ingredient: Ingredient) => {
+          fetchIngredientInfo(ingredient.id);
+        });
       }
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Terjadi kesalahan saat mencari makanan.");
-      setMeal(null);
+      Alert.alert(
+        "Error",
+        "An error occurred while searching for ingredients."
+      );
+      setIngredients([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderMeal = () => {
-    if (!meal) return null;
+  const fetchIngredientInfo = async (id: number) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/food/ingredients/${id}/information`,
+        {
+          params: {
+            amount: 1,
+            apiKey: API_KEY,
+          },
+        }
+      );
+      const nutrients = response.data.nutrition.nutrients;
+      const calories =
+        nutrients.find((n: any) => n.name === "Calories")?.amount || 0;
+      const fat = nutrients.find((n: any) => n.name === "Fat")?.amount || 0;
+      const carbohydrates =
+        nutrients.find((n: any) => n.name === "Carbohydrates")?.amount || 0;
+      const protein =
+        nutrients.find((n: any) => n.name === "Protein")?.amount || 0;
 
-    const calories =
-      meal.nutrition.nutrients.find((n) => n.title === "Calories")?.amount || 0;
-    const protein =
-      meal.nutrition.nutrients.find((n) => n.title === "Protein")?.amount || 0;
-    const fat =
-      meal.nutrition.nutrients.find((n) => n.title === "Fat")?.amount || 0;
-    const carbohydrates =
-      meal.nutrition.nutrients.find((n) => n.title === "Carbohydrates")
-        ?.amount || 0;
+      setNutritionData((prevData) => ({
+        ...prevData,
+        [id]: { calories, fat, carbohydrates, protein },
+      }));
+    } catch (error) {
+      console.error(
+        `Error fetching nutrition data for ingredient ${id}:`,
+        error
+      );
+    }
+  };
 
+  const capitalizeFirstLetter = (text: string) => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
+  const renderIngredient = ({ item }: { item: Ingredient }) => {
+    const nutrition = nutritionData[item.id];
     return (
-      <View style={styles.resultContainer}>
-        <MealCard
-          meal={{
-            id: meal.id,
-            title: meal.title,
-            image: meal.image,
-            calories,
+      <View style={styles.ingredientCard}>
+        <Image
+          source={{
+            uri: `https://spoonacular.com/cdn/ingredients_100x100/${item.image}`,
           }}
+          style={styles.ingredientImage}
         />
-        <NutritionInfo
-          calories={calories}
-          protein={protein}
-          fat={fat}
-          carbohydrates={carbohydrates}
-        />
+        <View style={styles.ingredientInfo}>
+          <Text style={styles.ingredientName}>
+            {capitalizeFirstLetter(item.name)}
+          </Text>
+          {nutrition ? (
+            <View style={styles.nutritionInfo}>
+              <Text style={styles.nutritionText}>
+                Calories: {nutrition.calories} cal
+              </Text>
+              <Text style={styles.nutritionText}>Fat: {nutrition.fat} g</Text>
+              <Text style={styles.nutritionText}>
+                Carbs: {nutrition.carbohydrates} g
+              </Text>
+              <Text style={styles.nutritionText}>
+                Protein: {nutrition.protein} g
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.loadingText}>Loading nutrition...</Text>
+          )}
+        </View>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Cari Informasi Nutrisi</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Masukkan nama makanan..."
-        value={query}
-        onChangeText={setQuery}
-      />
-      <Button title="Cari" onPress={handleSearch} color="#4CAF50" />
-      {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-      ) : (
-        <FlatList
-          data={meal ? [meal] : []}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderMeal}
-          contentContainerStyle={styles.list}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <StatusBar backgroundColor="#DA8359" barStyle="light-content" />
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Search Ingredients</Text>
+      </View>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Search Ingredients..."
+          value={query}
+          onChangeText={setQuery}
+          placeholderTextColor="#5B5B5B"
         />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </TouchableOpacity>
+      </View>
+      {loading ? (
+        <ActivityIndicator size="large" color="#DA8359" style={styles.loader} />
+      ) : (
+        ingredients.length > 0 && (
+          <View style={styles.ingredientsContainer}>
+            <FlatList
+              data={ingredients}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderIngredient}
+              contentContainerStyle={styles.list}
+              scrollEnabled={false}
+            />
+          </View>
+        )
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
+  },
+  titleContainer: {
+    backgroundColor: "#DA8359",
+    paddingTop: StatusBar.currentHeight,
+    paddingVertical: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: "hidden",
+    marginBottom: 5,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
+    marginTop: 70,
+    fontWeight: "700",
+    color: "#fafcee",
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    backgroundColor: "#A5B68D",
+    borderRadius: 32,
+    padding: 25,
+    marginHorizontal: 4,
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: 16,
+    backgroundColor: "#FAFCEE",
+    borderRadius: 12,
+    borderColor: "#DA8359",
+    borderWidth: 2,
+    padding: 12,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 10,
+  },
+  searchButton: {
+    backgroundColor: "#DA8359",
+    borderRadius: 12,
+    padding: 15,
+    alignItems: "center",
+    marginTop: 5,
+  },
+  searchButtonText: {
+    color: "#fafcee",
+    fontSize: 16,
+    fontWeight: "800",
+    alignItems: "center",
   },
   loader: {
     marginTop: 16,
   },
-  list: {
-    paddingTop: 16,
+  ingredientsContainer: {
+    backgroundColor: "#fafcee",
+    borderRadius: 32,
+    padding: 15,
+    marginBottom: 90,
+    gap: 5,
+    marginTop: 5,
+    marginHorizontal: 4,
   },
-  resultContainer: {
-    marginTop: 16,
+  list: {
+    paddingTop: 10,
+  },
+  ingredientCard: {
+    flexDirection: "row",
+    backgroundColor: "#A5B68D",
+    padding: 15,
+    borderRadius: 24,
+    alignItems: "center",
+    marginHorizontal: 4,
+    marginBottom: 5,
+  },
+  ingredientImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  ingredientInfo: {
+    flex: 1,
+  },
+  ingredientName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fafcee",
+  },
+  nutritionInfo: {
+    marginTop: 4,
+  },
+  nutritionText: {
+    fontSize: 12,
+    color: "#fafcee",
+    fontWeight: "500",
+  },
+  loadingText: {
+    fontSize: 12,
+    color: "#fafcee",
+    fontStyle: "italic",
   },
 });
 
-export default Search;
+export default SearchScreen;

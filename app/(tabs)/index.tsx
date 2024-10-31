@@ -1,31 +1,24 @@
-// app/(tabs)/index.tsx
 import React, { useState } from "react";
 import {
   View,
   Text,
-  FlatList,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
+  Image,
+  ScrollView,
+  StatusBar,
   ActivityIndicator,
   Alert,
-  TextInput,
-  SafeAreaView,
-  TouchableOpacity,
-  Modal,
+  Linking,
 } from "react-native";
-import MealCard from "../../components/MealCard";
-import CustomButton from "../../components/CustomButton";
-import { useCalorieContext } from "../../contexts/CalorieContext";
-import { API_KEY, BASE_URL } from "../../constants";
 import axios from "axios";
+import { API_KEY, BASE_URL } from "../../constants";
 
 interface Meal {
   id: number;
   title: string;
   image: string;
-  calories: number;
-  fat: number;
-  carbs: number;
-  protein: number;
   sourceUrl?: string;
 }
 
@@ -36,22 +29,26 @@ interface Nutrients {
   protein: number;
 }
 
-const Home = () => {
-  const { calorieTarget, setCalorieTarget } = useCalorieContext();
-  const [timeFrame, setTimeFrame] = useState<string | null>(null);
-  const [diet, setDiet] = useState<string | null>(null);
-  const [exclude, setExclude] = useState<string>("");
+export default function HomeScreen() {
+  const [timePeriod, setTimePeriod] = useState<string | null>(null);
+  const [dietType, setDietType] = useState<string | null>(null);
+  const [excludedIngredients, setExcludedIngredients] = useState<string>("");
+  const [dailyCalorieTarget, setDailyCalorieTarget] = useState<string>("2400");
   const [mealPlan, setMealPlan] = useState<{
     meals: Meal[];
     nutrients: Nutrients;
   } | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isTimeFrameModalVisible, setTimeFrameModalVisible] = useState(false);
-  const [isDietModalVisible, setDietModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleBlurCalorieInput = () => {
+    if (dailyCalorieTarget.trim() === "") {
+      setDailyCalorieTarget("2400");
+    }
+  };
 
   const generateMealPlan = async () => {
-    if (!calorieTarget) {
-      Alert.alert("Target Kalori Kosong", "Silakan masukkan target kalori.");
+    if (!dailyCalorieTarget) {
+      Alert.alert("Empty Calorie Target", "Please enter a calorie target.");
       return;
     }
 
@@ -64,28 +61,21 @@ const Home = () => {
           "x-api-key": API_KEY,
         },
         params: {
-          timeFrame: timeFrame || "day", // Default to "day" if not selected
-          targetCalories: calorieTarget,
-          diet: diet || undefined,
-          exclude: exclude || undefined,
+          timeFrame: timePeriod || "day",
+          targetCalories: parseInt(dailyCalorieTarget),
+          diet: dietType || undefined,
+          exclude: excludedIngredients || undefined,
         },
       });
 
       const data = response.data;
-
-      // Mapping data dari API sesuai struktur yang tersedia
-      const meals: Meal[] = (data.meals || []).map((meal: any) => ({
+      const meals: Meal[] = data.meals.map((meal: any) => ({
         id: meal.id,
         title: meal.title,
         image: `https://spoonacular.com/recipeImages/${meal.id}-312x231.${meal.imageType}`,
-        calories: 0, // Tidak ada data kalori spesifik pada meal individual
-        fat: 0, // Nutrisi per makanan tidak tersedia, jadi diatur ke 0
-        carbs: 0, // Nutrisi per makanan tidak tersedia, jadi diatur ke 0
-        protein: 0, // Nutrisi per makanan tidak tersedia, jadi diatur ke 0
         sourceUrl: meal.sourceUrl,
       }));
 
-      // Nutrisi total untuk hari atau minggu
       const nutrients: Nutrients = {
         calories: data.nutrients.calories || 0,
         carbohydrates: data.nutrients.carbohydrates || 0,
@@ -96,220 +86,268 @@ const Home = () => {
       setMealPlan({ meals, nutrients });
     } catch (err) {
       console.error(err);
-      Alert.alert(
-        "Error",
-        "Terjadi kesalahan saat menghasilkan rencana makan."
-      );
+      Alert.alert("Error", "An error occurred while generating the meal plan.");
     } finally {
       setLoading(false);
     }
   };
 
-  const renderMeal = ({ item }: { item: Meal }) => <MealCard meal={item} />;
-
-  const CustomDropdown = ({
-    title,
-    value,
-    options,
-    onSelect,
-    visible,
-    setVisible,
-  }: any) => (
-    <>
-      <TouchableOpacity
-        style={styles.dropdown}
-        onPress={() => setVisible(true)}
-      >
-        <Text style={{ color: value ? "#000" : "#888" }}>
-          {value ? value : title}
-        </Text>
-      </TouchableOpacity>
-      <Modal visible={visible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {options.map((option: string) => (
-              <TouchableOpacity
-                key={option}
-                style={styles.modalItem}
-                onPress={() => {
-                  onSelect(option);
-                  setVisible(false);
-                }}
-              >
-                <Text style={styles.modalText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setVisible(false)}
-            >
-              <Text style={styles.modalCloseText}>Tutup</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
+  const openRecipeUrl = (url: string) => {
+    Linking.openURL(url).catch((err) =>
+      console.error("Failed to open URL:", err)
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <FlatList
-        data={mealPlan?.meals || []}
-        keyExtractor={(item: Meal) => item.id.toString()}
-        renderItem={renderMeal}
-        ListHeaderComponent={
-          <View style={styles.form}>
-            <Text style={styles.title}>Bingung Makan Apa??</Text>
-
-            <CustomDropdown
-              title="Jangka Waktu"
-              value={timeFrame}
-              options={["Harian", "Mingguan"]}
-              onSelect={setTimeFrame}
-              visible={isTimeFrameModalVisible}
-              setVisible={setTimeFrameModalVisible}
-            />
-
-            <CustomDropdown
-              title="Jenis Diet"
-              value={diet}
-              options={["Vegetarian", "Vegan", "Paleo", "Ketogenic"]}
-              onSelect={setDiet}
-              visible={isDietModalVisible}
-              setVisible={setDietModalVisible}
-            />
-
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#DA8359" barStyle="light-content" />
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>What to Eat Today?</Text>
+      </View>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Time Period"
+            placeholderTextColor="#5B5B5B"
+            onChangeText={setTimePeriod}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Diet Type"
+            placeholderTextColor="#5B5B5B"
+            onChangeText={setDietType}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Excluded Ingredients"
+            placeholderTextColor="#5B5B5B"
+            onChangeText={setExcludedIngredients}
+          />
+          <View style={styles.calorieInputContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="Bahan yang Dikecualikan"
-              placeholderTextColor="#888"
-              value={exclude}
-              onChangeText={setExclude}
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Target Kalori Harian"
-              placeholderTextColor="#888"
+              style={styles.calorieInput}
+              placeholder="Daily Calorie Target"
+              placeholderTextColor="#5B5B5B"
               keyboardType="numeric"
-              value={calorieTarget?.toString()}
-              onChangeText={(text) => setCalorieTarget(Number(text))}
+              value={dailyCalorieTarget}
+              onChangeText={setDailyCalorieTarget}
+              onBlur={handleBlurCalorieInput}
             />
-
-            <CustomButton title="Buat Rencana" onPress={generateMealPlan} />
-
-            {loading && (
-              <View style={styles.loader}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-              </View>
-            )}
-
-            {mealPlan && (
-              <View style={styles.nutrientContainer}>
-                <Text style={styles.nutrientTitle}>Total Nutrisi Harian</Text>
-                <Text>Kalori: {mealPlan.nutrients.calories} kcal</Text>
-                <Text>
-                  Karbohidrat: {mealPlan.nutrients.carbohydrates} gram
-                </Text>
-                <Text>Lemak: {mealPlan.nutrients.fat} gram</Text>
-                <Text>Protein: {mealPlan.nutrients.protein} gram</Text>
-              </View>
-            )}
+            <Text style={styles.kcalText}>kcal</Text>
           </View>
-        }
-        contentContainerStyle={styles.list}
-      />
-    </SafeAreaView>
+
+          <TouchableOpacity
+            style={styles.generateButton}
+            onPress={generateMealPlan}
+          >
+            <Text style={styles.generateButtonText}>Generate Menu</Text>
+          </TouchableOpacity>
+        </View>
+
+        {loading && (
+          <ActivityIndicator
+            size="large"
+            color="#DA8359"
+            style={{ marginVertical: 20 }}
+          />
+        )}
+
+        {mealPlan && (
+          <>
+            <View style={styles.nutrientsCard}>
+              <Text style={styles.nutrientsTitle}>
+                Daily Amount of Nutrients
+              </Text>
+              <View style={styles.nutrientRow}>
+                <Text style={styles.nutrientLabel}>Calorie</Text>
+                <Text style={styles.nutrientValue}>
+                  : {mealPlan.nutrients.calories} kcal
+                </Text>
+              </View>
+              <View style={styles.nutrientRow}>
+                <Text style={styles.nutrientLabel}>Carbohydrate</Text>
+                <Text style={styles.nutrientValue}>
+                  : {mealPlan.nutrients.carbohydrates} g
+                </Text>
+              </View>
+              <View style={styles.nutrientRow}>
+                <Text style={styles.nutrientLabel}>Fat</Text>
+                <Text style={styles.nutrientValue}>
+                  : {mealPlan.nutrients.fat} g
+                </Text>
+              </View>
+              <View style={styles.nutrientRow}>
+                <Text style={styles.nutrientLabel}>Protein</Text>
+                <Text style={styles.nutrientValue}>
+                  : {mealPlan.nutrients.protein} g
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.recipeContainer}>
+              {mealPlan.meals.map((meal) => (
+                <TouchableOpacity
+                  key={meal.id}
+                  style={styles.recipeCard}
+                  onPress={() => openRecipeUrl(meal.sourceUrl || "")}
+                >
+                  <Image
+                    source={{ uri: meal.image }}
+                    style={styles.recipeImage}
+                  />
+                  <View style={styles.recipeInfo}>
+                    <Text style={styles.recipeName}>{meal.title}</Text>
+                    <Text style={styles.recipeDetails}>
+                      Click to see the details
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
   },
-  form: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  titleContainer: {
+    backgroundColor: "#DA8359",
+    paddingTop: StatusBar.currentHeight,
+    paddingVertical: 25,
     alignItems: "center",
+    justifyContent: "center",
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: "hidden",
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#4CAF50",
-    textAlign: "center",
+    marginTop: 70,
+    fontWeight: "700",
+    color: "#fafcee",
   },
-  dropdown: {
-    width: "100%",
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    justifyContent: "center",
-    paddingHorizontal: 10,
-    marginBottom: 12,
-    backgroundColor: "#fafafa",
+  content: {
+    flex: 1,
+    paddingVertical: 5,
+    marginHorizontal: 4,
+  },
+  inputContainer: {
+    backgroundColor: "#A5B68D",
+    borderRadius: 32,
+    padding: 25,
+  },
+  calorieInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-    width: "100%",
-    color: "#333",
-    backgroundColor: "#fafafa",
-  },
-  loader: {
-    marginVertical: 16,
-  },
-  nutrientContainer: {
-    padding: 16,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 8,
-    marginBottom: 16,
-    width: "100%",
-  },
-  nutrientTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#333",
-  },
-  list: {
-    paddingBottom: 16,
-  },
-  modalOverlay: {
+    backgroundColor: "#FAFCEE",
+    borderRadius: 12,
+    borderColor: "#DA8359",
+    borderWidth: 2,
+    padding: 12,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 10,
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  modalContent: {
-    width: "80%",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 20,
+  calorieInput: {
+    backgroundColor: "#FAFCEE",
+    borderRadius: 12,
+    borderColor: "#DA8359",
+    borderWidth: 2,
+    padding: 12,
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 10,
+    flex: 1,
   },
-  modalItem: {
-    paddingVertical: 10,
-  },
-  modalText: {
+  kcalText: {
+    marginLeft: 8,
     fontSize: 16,
-    textAlign: "center",
+    fontWeight: "800",
+    color: "#FAFCEE",
+    alignSelf: "center",
   },
-  modalCloseButton: {
-    paddingVertical: 10,
+  generateButton: {
+    backgroundColor: "#DA8359",
+    borderRadius: 12,
+    padding: 15,
+    alignItems: "center",
     marginTop: 10,
-    backgroundColor: "#4CAF50",
+  },
+  generateButtonText: {
+    color: "#fafcee",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  nutrientsCard: {
+    backgroundColor: "#fafcee",
+    borderRadius: 32,
+    padding: 25,
+    marginVertical: 5,
+  },
+  nutrientsTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#DA8359",
+    marginBottom: 10,
+  },
+  nutrientRow: {
+    flexDirection: "row",
+    marginVertical: 2,
+  },
+  nutrientLabel: {
+    color: "#5B5B5B",
+    fontWeight: "600",
+    flex: 1,
+  },
+  nutrientValue: {
+    color: "#5B5B5B",
+    fontWeight: "600",
+    flex: 1,
+  },
+  recipeContainer: {
+    backgroundColor: "#fafcee",
+    borderRadius: 32,
+    padding: 20,
+    marginBottom: 70,
+    gap: 5,
+  },
+  recipeCard: {
+    flexDirection: "row",
+    backgroundColor: "#8B9D7D",
+    borderRadius: 16,
+    padding: 10,
+    alignItems: "center",
+  },
+  recipeImage: {
+    width: 80,
+    height: 80,
     borderRadius: 8,
   },
-  modalCloseText: {
+  recipeInfo: {
+    marginLeft: 15,
+    flex: 1,
+  },
+  recipeName: {
     color: "#fff",
-    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  recipeDetails: {
+    color: "#fff",
+    fontSize: 14,
+    opacity: 0.8,
   },
 });
-
-export default Home;
