@@ -4,6 +4,8 @@
 
 ## Deskripsi Aplikasi
 
+**Aplikasi ini dikembangkan menggunakan Spoonacular API**
+
 Meal Planner menyediakan fitur untuk:
 - Menentukan periode waktu (time period) untuk perencanaan makanan, yang dapat diatur sebagai `day` atau `week`.
 - Menentukan tipe diet, seperti:
@@ -29,8 +31,6 @@ Meal Planner menyediakan fitur untuk:
 File APK dari aplikasi Meal Planner ini sudah disertakan di dalam repository. Anda dapat mengunduh dan menginstalnya pada perangkat Android.
 
 ## Petunjuk Penggunaan
-
-**Aplikasi ini dikembangkan menggunakan Spoonacular API**
 
 1. **Time Period**: Isi dengan `day` atau `week` untuk mengatur periode waktu.
 2. **Diet Type**: Pilih salah satu dari:
