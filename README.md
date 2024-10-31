@@ -30,6 +30,8 @@ File APK dari aplikasi Meal Planner ini sudah disertakan di dalam repository. An
 
 ## Petunjuk Penggunaan
 
+**Aplikasi ini dikembangkan menggunakan Spoonacular API**
+
 1. **Time Period**: Isi dengan `day` atau `week` untuk mengatur periode waktu.
 2. **Diet Type**: Pilih salah satu dari:
    - Gluten Free
