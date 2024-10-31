@@ -25,6 +25,7 @@ Meal Planner menyediakan fitur untuk:
 - Nama: **Muhammad Fuad Fakhruzzaki**
 - NIM: **21120122130052**
 - Kelompok/Shift: **10/2**
+- Credit Idea: **Najah Agustina Herawati ❤️**
 
 ## Informasi APK
 
