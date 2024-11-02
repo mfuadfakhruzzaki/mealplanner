@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import {
 } from "react-native";
 import axios from "axios";
 import { API_KEY, BASE_URL } from "../../constants";
+import { router } from "expo-router";
+import { AuthContext } from "../../contexts/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Meal {
   id: number;
@@ -29,7 +32,16 @@ interface Nutrients {
   protein: number;
 }
 
+const getTodayDateString = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = `0${today.getMonth() + 1}`.slice(-2);
+  const day = `0${today.getDate()}`.slice(-2);
+  return `${year}-${month}-${day}`;
+};
+
 export default function HomeScreen() {
+  const { logout } = useContext(AuthContext);
   const [timePeriod, setTimePeriod] = useState<string | null>(null);
   const [dietType, setDietType] = useState<string | null>(null);
   const [excludedIngredients, setExcludedIngredients] = useState<string>("");
@@ -39,6 +51,25 @@ export default function HomeScreen() {
     nutrients: Nutrients;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadMealPlan = async () => {
+      try {
+        const savedMealPlan = await AsyncStorage.getItem("mealPlan");
+        if (savedMealPlan) {
+          const parsedMealPlan = JSON.parse(savedMealPlan);
+          const today = getTodayDateString();
+          if (parsedMealPlan.date === today) {
+            setMealPlan(parsedMealPlan.mealPlan);
+          }
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to load saved meal plan.");
+      }
+    };
+
+    loadMealPlan();
+  }, []);
 
   const handleBlurCalorieInput = () => {
     if (dailyCalorieTarget.trim() === "") {
@@ -83,9 +114,16 @@ export default function HomeScreen() {
         protein: data.nutrients.protein || 0,
       };
 
-      setMealPlan({ meals, nutrients });
+      const fetchedMealPlan = { meals, nutrients };
+      setMealPlan(fetchedMealPlan);
+
+      const today = getTodayDateString();
+      const mealPlanToSave = {
+        date: today,
+        mealPlan: fetchedMealPlan,
+      };
+      await AsyncStorage.setItem("mealPlan", JSON.stringify(mealPlanToSave));
     } catch (err) {
-      console.error(err);
       Alert.alert("Error", "An error occurred while generating the meal plan.");
     } finally {
       setLoading(false);
@@ -93,9 +131,21 @@ export default function HomeScreen() {
   };
 
   const openRecipeUrl = (url: string) => {
-    Linking.openURL(url).catch((err) =>
-      console.error("Failed to open URL:", err)
-    );
+    if (url) {
+      Linking.openURL(url).catch(() =>
+        Alert.alert("Error", "Failed to open the recipe URL.")
+      );
+    } else {
+      Alert.alert("Error", "No URL available for this recipe.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      Alert.alert("Error", "Failed to logout. Please try again.");
+    }
   };
 
   return (
@@ -103,6 +153,9 @@ export default function HomeScreen() {
       <StatusBar backgroundColor="#DA8359" barStyle="light-content" />
       <View style={styles.titleContainer}>
         <Text style={styles.title}>What to Eat Today?</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
       <ScrollView
         style={styles.content}
@@ -222,23 +275,37 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     backgroundColor: "#DA8359",
-    paddingTop: StatusBar.currentHeight,
+    paddingTop: StatusBar.currentHeight || 40,
     paddingVertical: 25,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     overflow: "hidden",
+    marginBottom: 5,
+    paddingHorizontal: 35,
   },
   title: {
     fontSize: 24,
-    marginTop: 70,
-    fontWeight: "700",
+    fontFamily: "popins-bold",
     color: "#fafcee",
+    marginTop: 50,
+  },
+  logoutButton: {
+    backgroundColor: "#fafcee",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 50,
+  },
+  logoutButtonText: {
+    color: "#DA8359",
+    fontSize: 12,
+    fontFamily: "popins-semibold",
   },
   content: {
     flex: 1,
-    paddingVertical: 5,
     marginHorizontal: 4,
   },
   inputContainer: {
@@ -256,10 +323,9 @@ const styles = StyleSheet.create({
     borderColor: "#DA8359",
     borderWidth: 2,
     padding: 12,
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 14,
+    fontFamily: "popins-medium",
     marginBottom: 10,
-    flex: 1,
   },
   calorieInput: {
     backgroundColor: "#FAFCEE",
@@ -267,15 +333,16 @@ const styles = StyleSheet.create({
     borderColor: "#DA8359",
     borderWidth: 2,
     padding: 12,
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 14,
+    fontFamily: "popins-medium",
     marginBottom: 10,
     flex: 1,
   },
   kcalText: {
     marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "800",
+    marginRight: 4,
+    fontSize: 14,
+    fontFamily: "popins-bold",
     color: "#FAFCEE",
     alignSelf: "center",
   },
@@ -289,7 +356,7 @@ const styles = StyleSheet.create({
   generateButtonText: {
     color: "#fafcee",
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: "popins-bold",
   },
   nutrientsCard: {
     backgroundColor: "#fafcee",
@@ -299,9 +366,9 @@ const styles = StyleSheet.create({
   },
   nutrientsTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: "popins-bold",
     color: "#DA8359",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   nutrientRow: {
     flexDirection: "row",
@@ -309,12 +376,12 @@ const styles = StyleSheet.create({
   },
   nutrientLabel: {
     color: "#5B5B5B",
-    fontWeight: "600",
+    fontFamily: "popins-medium",
     flex: 1,
   },
   nutrientValue: {
     color: "#5B5B5B",
-    fontWeight: "600",
+    fontFamily: "popins-medium",
     flex: 1,
   },
   recipeContainer: {
@@ -330,6 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 10,
     alignItems: "center",
+    marginBottom: 10,
   },
   recipeImage: {
     width: 80,
@@ -341,12 +409,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   recipeName: {
-    color: "#fff",
+    color: "#fafcee",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: "popins-semibold",
   },
   recipeDetails: {
-    color: "#fff",
+    color: "#fafcee",
+    fontFamily: "popins-medium",
     fontSize: 14,
     opacity: 0.8,
   },
