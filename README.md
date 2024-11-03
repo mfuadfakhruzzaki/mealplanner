@@ -4,7 +4,7 @@
 
 ## Deskripsi Aplikasi
 
-**Aplikasi ini dikembangkan menggunakan Spoonacular API** `https://spoonacular.com/food-api`
+**Aplikasi ini dikembangkan menggunakan Spoonacular API** `https://spoonacular.com/food-api` **dan API Authentication pribadi** `https://fuadfakhruz.blog`
 
 Meal Planner menyediakan fitur untuk:
 - Menentukan periode waktu (time period) untuk perencanaan makanan, yang dapat diatur sebagai `day` atau `week`.
