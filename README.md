@@ -29,7 +29,7 @@ Meal Planner menyediakan fitur untuk:
 
 ## Informasi APK
 
-File APK dari aplikasi Meal Planner ini sudah disertakan di dalam repository. Anda dapat mengunduh dan menginstalnya pada perangkat Android.
+File APK dari aplikasi Meal Planner ini sudah disertakan di dalam [release repository](https://github.com/mfuadfakhruzzaki/mealplanner/releases/tag/v1). Anda dapat mengunduh dan menginstalnya pada perangkat Android.
 
 ## Petunjuk Penggunaan
 
